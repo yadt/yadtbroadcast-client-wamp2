@@ -4,9 +4,8 @@ import logging
 
 from twisted.internet import reactor
 
-from twisted.internet.endpoints import clientFromString
-from autobahn.twisted import wamp, websocket
-from autobahn.wamp import types
+from autobahn.twisted import wamp
+from autobahn.twisted.wamp import ApplicationRunner
 
 
 class WampBroadcaster(object):
@@ -38,16 +37,11 @@ class WampBroadcaster(object):
             def onDisconnect(self):
                 broadcaster.logger.debug("disconnected from %s" % broadcaster.host)
 
-        component_config = types.ComponentConfig(realm="yadt")
-        session_factory = wamp.ApplicationSessionFactory(config=component_config)
-        session_factory.session = BroadcasterComponent
-        transport_factory = websocket.WampWebSocketClientFactory(session_factory,
-                                                                 debug=True,
-                                                                 debug_wamp=True)
-
-        client = clientFromString(reactor, "tcp:{0}:{1}".format(self.host,
-                                                                self.port))
-        client.connect(transport_factory)
+        runner = ApplicationRunner(url="ws://{0}:{1}/wamp".format(self.host, self.port),
+                                   realm="yadt",
+                                   debug=True,
+                                   debug_wamp=True)
+        runner.run(BroadcasterComponent, start_reactor=False)
 
     def addOnSessionOpenHandler(self, handler):
         self.on_session_open_handlers.append(handler)
