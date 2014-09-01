@@ -33,18 +33,13 @@ class WampBroadcaster(object):
 
 
         class BroadcasterComponent(wamp.ApplicationSession):
-            """
-            Application code goes here. This is an example component that calls
-            a remote procedure on a WAMP peer, subscribes to a topic to receive
-            events, and then stops the world after some events.
-            """
 
             def onJoin(self, details):
                 broadcaster.client = self
                 broadcaster.onSessionOpen()
 
             def onDisconnect(self):
-                print "disconnected from %s" % broadcaster.host
+                logger.debug("disconnected from %s" % broadcaster.host)
 
 
         component_config = types.ComponentConfig(realm="yadt")
@@ -63,7 +58,7 @@ class WampBroadcaster(object):
 
     def onSessionOpen(self):
         if self.target:
-            print "subscribing to %s" % self.target
+            logger.debug("subscribing to %s" % self.target)
             self.client.subscribe(self.onEvent, self.target)
         for handler in self.on_session_open_handlers:
             handler()
