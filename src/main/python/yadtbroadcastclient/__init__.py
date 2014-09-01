@@ -4,12 +4,10 @@ import logging
 
 from twisted.internet import reactor
 
-from twisted.python import log
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks
 from twisted.internet.endpoints import clientFromString
 from autobahn.twisted import wamp, websocket
 from autobahn.wamp import types
+
 
 class WampBroadcaster(object):
     HEARTBEAT_INTERVAL = 120
@@ -31,7 +29,6 @@ class WampBroadcaster(object):
         broadcaster = self
         self.logger.debug('trying to connect to %s' % self.url)
 
-
         class BroadcasterComponent(wamp.ApplicationSession):
 
             def onJoin(self, details):
@@ -39,8 +36,7 @@ class WampBroadcaster(object):
                 broadcaster.onSessionOpen()
 
             def onDisconnect(self):
-                logger.debug("disconnected from %s" % broadcaster.host)
-
+                broadcaster.logger.debug("disconnected from %s" % broadcaster.host)
 
         component_config = types.ComponentConfig(realm="yadt")
         session_factory = wamp.ApplicationSessionFactory(config=component_config)
@@ -58,7 +54,7 @@ class WampBroadcaster(object):
 
     def onSessionOpen(self):
         if self.target:
-            logger.debug("subscribing to %s" % self.target)
+            self.logger.debug("subscribing to %s" % self.target)
             self.client.subscribe(self.onEvent, self.target)
         for handler in self.on_session_open_handlers:
             handler()
