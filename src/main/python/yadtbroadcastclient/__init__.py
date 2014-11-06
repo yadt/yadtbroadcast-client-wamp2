@@ -22,6 +22,7 @@ class WampBroadcaster(object):
         self.logger.debug('Configured broadcaster: %s' % self.url)
         self.client = None
         self.on_session_open_handlers = []
+        self.queue = []
 
     def connect(self):
         if self.client:
@@ -56,12 +57,34 @@ class WampBroadcaster(object):
     def addOnSessionOpenHandler(self, handler):
         self.on_session_open_handlers.append(handler)
 
+    def connectionLost(self, reason):
+            self.logger.error('connection lost: %s' % reason)
+            self.client = None
+
+    def _client_watchdog(self, delay=1):
+        if hasattr(self, 'client') and self.client:
+            reactor.callLater(1, self._client_watchdog)
+        else:
+            reactor.callLater(delay, self._client_watchdog, min(60, 2 * delay))
+            self.logger.error('client not set, trying to connect')
+            if delay > 1:
+                self.logger.info('(scheduling next try in %s seconds)' % delay)
+            return self.connect()
+
     def onSessionOpen(self):
+        self._client_watchdog()
         if self.target:
             self.logger.debug("subscribing to %s" % self.target)
             self.client.subscribe(self.onEvent, self.target)
         for handler in self.on_session_open_handlers:
             handler()
+
+        if self.queue:
+            number_of_events_to_flush = len(self.queue)
+            for (target, event) in self.queue:
+                self.client.publish(target, event)
+            self.queue = self.queue[number_of_events_to_flush:]
+
         reactor.callLater(WampBroadcaster.HEARTBEAT_INTERVAL, self._heartbeat)
 
     def _heartbeat(self):
@@ -85,10 +108,6 @@ class WampBroadcaster(object):
             target = self.target
         self.logger.debug('Going to send event %s on target %r' % (id, target))
 
-        if not self._check_connection():
-            self.logger.warn('Dropping event %s since not connected' % id)
-            return
-
         event = {
             'type': 'event',
             'id': id,
@@ -96,8 +115,14 @@ class WampBroadcaster(object):
             'target': target,
             'payload': data
         }
+
         for kwarg_key, kwarg_val in kwargs.iteritems():
             event[kwarg_key] = kwarg_val
+
+        if not self._check_connection():
+            self.logger.warn('Queueing event %s since not connected' % id)
+            self.queue.append((target, event))
+            return
 
         self.client.publish(target, event)
 
@@ -108,7 +133,7 @@ class WampBroadcaster(object):
                 setattr(self, warning_sent_attribute_name, True)
                 self.logger.warning(
                     'could not connect to broadcaster %s' % self.url)
-            self.logger.debug('not connected, dropping data...')
+            self.logger.debug('not connected, queueing data')
             return False
         return True
 
