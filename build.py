@@ -33,6 +33,8 @@ def set_properties(project):
     project.depends_on('Twisted')
     project.depends_on('autobahn')
 
+    project.set_property("verbose", True)
+
     project.set_property("flake8_include_test_sources", True)
     project.set_property('coverage_break_build', False)
 
