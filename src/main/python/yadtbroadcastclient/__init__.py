@@ -23,6 +23,7 @@ class WampBroadcaster(object):
         self.client = None
         self.on_session_open_handlers = []
         self.queue = []
+        self._client_watchdog()
 
     def connect(self):
         if self.client:
@@ -71,7 +72,6 @@ class WampBroadcaster(object):
             return self.connect()
 
     def onSessionOpen(self):
-        self._client_watchdog()
         if self.target:
             self.logger.debug("subscribing to %s" % self.target)
             self.client.subscribe(self.onEvent, self.target)
