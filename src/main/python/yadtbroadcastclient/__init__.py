@@ -38,7 +38,8 @@ class WampBroadcaster(object):
                 broadcaster.onSessionOpen()
 
             def onDisconnect(self):
-                broadcaster.logger.debug("disconnected from %s" % broadcaster.host)
+                broadcaster.logger.error("disconnected from %s" % broadcaster.host)
+                broadcaster.client = None
 
         component_config = types.ComponentConfig(realm="yadt")
         session_factory = wamp.ApplicationSessionFactory(config=component_config)
@@ -52,14 +53,12 @@ class WampBroadcaster(object):
                                                                  debug_wamp=True)
         client = clientFromString(reactor, "tcp:{0}:{1}".format(self.host,
                                                                 self.port))
-        client.connect(transport_factory)
+        from functools import partial
+        client.connect(transport_factory).addErrback(
+            partial(broadcaster.logger.error, "Could not connect: %s"))
 
     def addOnSessionOpenHandler(self, handler):
         self.on_session_open_handlers.append(handler)
-
-    def connectionLost(self, reason):
-            self.logger.error('connection lost: %s' % reason)
-            self.client = None
 
     def _client_watchdog(self, delay=1):
         if hasattr(self, 'client') and self.client:
