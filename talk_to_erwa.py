@@ -5,6 +5,7 @@ import sys
 from twisted.internet import reactor
 import logging
 logging.basicConfig()
+logging.getLogger().setLevel(logging.DEBUG)
 
 try:
     host = sys.argv[1]
@@ -19,6 +20,13 @@ from yadtbroadcastclient import WampBroadcaster
 w = WampBroadcaster(host, "8080", "the_topic")
 w.onEvent = print
 
+def spammy(counter):
+    w.sendFullUpdate({"counter": counter})
+    counter = counter + 1
+    reactor.callLater(5, spammy, counter)
+
+
 w.connect()
+spammy(0)
 
 reactor.run()
