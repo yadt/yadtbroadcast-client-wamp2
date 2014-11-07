@@ -23,3 +23,16 @@ class WampBroadcasterReconnectionTests(TestCase):
                          [call(('any-topic', {'any-key': 'any-value'})),
                           call(('other-topic', {'other-key': 'other-value'}))])
 
+    def test_should_flush_messages_after_connecting(self):
+        self.mock_broadcaster.queue = [("topic1", "payload1"),
+                                       ("topic2", "payload2")]
+        self.mock_broadcaster.client = Mock()
+        self.mock_broadcaster.on_session_open_handlers = []
+
+        WampBroadcaster.onSessionOpen(self.mock_broadcaster)
+
+        self.assertEqual(
+            self.mock_broadcaster._publish.call_args_list,
+            [
+                call('topic1', 'payload1'),
+                call('topic2', 'payload2')])
