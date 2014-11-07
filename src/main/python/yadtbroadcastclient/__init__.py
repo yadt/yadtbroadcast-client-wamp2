@@ -81,7 +81,7 @@ class WampBroadcaster(object):
         if self.queue:
             number_of_events_to_flush = len(self.queue)
             for (target, event) in self.queue:
-                self.client.publish(target, event)
+                self._publish(target, event)
             self.queue = self.queue[number_of_events_to_flush:]
 
         reactor.callLater(WampBroadcaster.HEARTBEAT_INTERVAL, self._heartbeat)
@@ -114,15 +114,16 @@ class WampBroadcaster(object):
             'target': target,
             'payload': data
         }
-
         for kwarg_key, kwarg_val in kwargs.iteritems():
             event[kwarg_key] = kwarg_val
 
+        self._publish(target, event)
+
+    def _publish(self, target, event):
         if not self._check_connection():
             self.logger.warn('Queueing event %s since not connected' % id)
             self.queue.append((target, event))
             return
-
         self.client.publish(target, event)
 
     def _check_connection(self):
