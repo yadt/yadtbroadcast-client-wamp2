@@ -36,3 +36,15 @@ class WampBroadcasterReconnectionTests(TestCase):
             [
                 call('topic1', 'payload1'),
                 call('topic2', 'payload2')])
+
+    def test_should_run_session_open_handlers_when_establishing_connection(self):
+        handler_1 = Mock()
+        handler_2 = Mock()
+        self.mock_broadcaster.on_session_open_handlers = [handler_1, handler_2]
+        self.mock_broadcaster.client = Mock()
+        self.mock_broadcaster.queue = []
+
+        WampBroadcaster.onSessionOpen(self.mock_broadcaster)
+
+        handler_1.assert_called_with()
+        handler_2.assert_called_with()
