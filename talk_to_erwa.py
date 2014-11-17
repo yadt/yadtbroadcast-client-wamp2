@@ -21,6 +21,7 @@ w = WampBroadcaster(host, "8080", "the_topic")
 w.onEvent = print
 
 def spammy(counter):
+    w.sendServiceChange({"fooservice": "DOWN"})
     w.sendFullUpdate({"counter": counter})
     counter = counter + 1
     reactor.callLater(5, spammy, counter)
