@@ -20,14 +20,14 @@ from yadtbroadcastclient import WampBroadcaster
 w = WampBroadcaster(host, "8080", "the_topic")
 w.onEvent = print
 
-def spammy(counter):
-    w.sendServiceChange({"fooservice": "DOWN"})
+def spammy(counter, is_up):
+    w.sendServiceChange({"fooservice": ("UP" if is_up else "DOWN")})
     w.sendFullUpdate({"counter": counter})
     counter = counter + 1
-    reactor.callLater(5, spammy, counter)
+    reactor.callLater(5, spammy, counter, not is_up)
 
 
 w.connect()
-spammy(0)
+spammy(0, True)
 
 reactor.run()
