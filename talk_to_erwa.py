@@ -39,7 +39,7 @@ w.onEvent = print
 
 
 def spammy(counter, is_up):
-    w.sendServiceChange({"fooservice": ("UP" if is_up else "DOWN")})
+    w.sendServiceChange([{'uri': "service://foo/bar", 'state': "UP" if is_up else "DOWN"}])
     w.sendFullUpdate(dummy_data)
     counter = counter + 1
     reactor.callLater(5, spammy, counter, not is_up)
