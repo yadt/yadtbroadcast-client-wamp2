@@ -26,6 +26,9 @@ class WampBroadcaster(object):
         self._client_watchdog()
 
     def connect(self):
+        self.logger.warn("Caught invalid call to `connect()`, this is not required since the client now autoconnects.")
+
+    def _connect(self):
         if self.client:
             self.logger.debug('already connected to %s' % self.url)
             return
@@ -69,7 +72,7 @@ class WampBroadcaster(object):
             self.logger.error('client not set, trying to connect')
             if delay > 1:
                 self.logger.info('(scheduling next try in %s seconds)' % delay)
-            return self.connect()
+            return self._connect()
 
     def onSessionOpen(self):
         if self.target:
