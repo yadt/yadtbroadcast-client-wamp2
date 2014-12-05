@@ -42,7 +42,7 @@ class WampBroadcaster(object):
                 broadcaster.onSessionOpen()
 
             def onDisconnect(self):
-                broadcaster.logger.error("disconnected from %s" % broadcaster.host)
+                broadcaster.logger.debug("disconnected from %s" % broadcaster.host)
                 broadcaster.client = None
 
         component_config = types.ComponentConfig(realm="yadt")
@@ -59,7 +59,7 @@ class WampBroadcaster(object):
                                                                 self.port))
         from functools import partial
         client.connect(transport_factory).addErrback(
-            partial(broadcaster.logger.error, "Could not connect: %s"))
+            partial(broadcaster.logger.warning, "Could not connect: %s"))
 
     def addOnSessionOpenHandler(self, handler):
         self.on_session_open_handlers.append(handler)
@@ -69,9 +69,9 @@ class WampBroadcaster(object):
             reactor.callLater(1, self._client_watchdog)
         else:
             reactor.callLater(delay, self._client_watchdog, min(60, 2 * delay))
-            self.logger.error('client not set, trying to connect')
+            self.logger.debug('client not set, trying to connect')
             if delay > 1:
-                self.logger.info('(scheduling next try in %s seconds)' % delay)
+                self.logger.debug('(scheduling next try in %s seconds)' % delay)
             return self._connect()
 
     def onSessionOpen(self):
@@ -124,7 +124,7 @@ class WampBroadcaster(object):
 
     def _publish(self, target, event):
         if not self._check_connection():
-            self.logger.warn('Queueing event %s on %s since not connected' % (
+            self.logger.debug('Queueing event %s on %s since not connected' % (
                              event,
                              target))
             self.queue.append((target, event))
