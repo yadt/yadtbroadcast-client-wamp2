@@ -19,6 +19,7 @@ class WampBroadcaster(object):
         self.target = target
         self.url = 'ws://%s:%s/' % (self.host, self.port)
         self.logger = logging.getLogger('broadcaster')
+        logging.getLogger("twisted").setLevel(logging.ERROR)
         self.logger.debug('Configured broadcaster: %s' % self.url)
         self.client = None
         self.on_session_open_handlers = []
