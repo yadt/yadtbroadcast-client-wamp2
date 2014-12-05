@@ -53,8 +53,8 @@ class WampBroadcaster(object):
                                                                  serializers=serializers,
                                                                  url="ws://{0}:{1}/wamp".format(self.host,
                                                                                                 self.port),
-                                                                 debug=True,
-                                                                 debug_wamp=True)
+                                                                 debug=False,
+                                                                 debug_wamp=False)
         client = clientFromString(reactor, "tcp:{0}:{1}".format(self.host,
                                                                 self.port))
         from functools import partial
