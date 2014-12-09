@@ -38,6 +38,8 @@ def set_properties(project):
     project.set_property("flake8_include_test_sources", True)
     project.set_property('coverage_break_build', False)
 
+    project.set_property("install_dependencies_upgrade", True)
+
     project.set_property('copy_resources_target', '$dir_dist')
     project.get_property('copy_resources_glob').append('setup.cfg')
     project.set_property('dir_dist_scripts', 'scripts')
