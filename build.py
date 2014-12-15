@@ -29,6 +29,7 @@ license = 'GNU GPL v3'
 @init
 def set_properties(project):
     project.build_depends_on('mock')
+    project.build_depends_on('requests')
 
     project.depends_on('Twisted')
     project.depends_on('autobahn')
