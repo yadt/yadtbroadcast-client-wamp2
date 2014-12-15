@@ -24,6 +24,7 @@ from yadtbroadcastclient import WampBroadcaster
 received = []
 timeout_in_seconds = 10
 expected_event = {"id": message}
+global exit_code
 exit_code = 1
 
 
@@ -38,6 +39,7 @@ def onEvent(event):
 def verify_if_is_expected_event(event):
     if expected_event == event:
         logger.info("Success: found target event %s" % expected_event)
+        global exit_code
         exit_code = 0
         reactor.stop()
     else:
