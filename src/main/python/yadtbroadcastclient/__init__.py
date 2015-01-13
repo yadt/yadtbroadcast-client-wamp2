@@ -31,10 +31,10 @@ class WampBroadcaster(object):
 
     def _connect(self):
         if self.client:
-            self.logger.debug('already connected to %s' % self.url)
+            self.logger.debug('already connected to broadcaster %s' % self.url)
             return
         broadcaster = self
-        self.logger.debug('trying to connect to %s' % self.url)
+        self.logger.debug('trying to connect to broadcaster %s' % self.url)
 
         class BroadcasterComponent(wamp.ApplicationSession):
 
@@ -43,7 +43,7 @@ class WampBroadcaster(object):
                 broadcaster.onSessionOpen()
 
             def onDisconnect(self):
-                broadcaster.logger.debug("disconnected from %s" % broadcaster.host)
+                broadcaster.logger.debug("Disconnected from broadcaster at %s, will reconnect" % broadcaster.host)
                 broadcaster.client = None
 
         component_config = types.ComponentConfig(realm="yadt")
@@ -60,7 +60,7 @@ class WampBroadcaster(object):
                                                                 self.port))
         from functools import partial
         client.connect(transport_factory).addErrback(
-            partial(broadcaster.logger.warning, "Could not connect: %s"))
+            partial(broadcaster.logger.warning, "Could not connect to broadcaster at %s"))
 
     def addOnSessionOpenHandler(self, handler):
         self.on_session_open_handlers.append(handler)
@@ -138,7 +138,7 @@ class WampBroadcaster(object):
             if not getattr(self, warning_sent_attribute_name, False):
                 setattr(self, warning_sent_attribute_name, True)
                 self.logger.warning(
-                    'could not connect to broadcaster %s' % self.url)
+                    'Could not connect to broadcaster at %s' % self.url)
             self.logger.debug('not connected, queueing data')
             return False
         return True
