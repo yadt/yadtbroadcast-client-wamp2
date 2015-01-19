@@ -59,14 +59,17 @@ except IndexError:
 
 sys.path.insert(0, "src/main/python")
 from yadtbroadcastclient import WampBroadcaster
+from time import time
 
+test_id = str(int(time()))
 
-w = WampBroadcaster(host, "8080", "foo")
+w = WampBroadcaster(host, "8080", test_id)
 w.onEvent = partial(print, "Got event ")
 
 
 def connected():
     reactor.connected = True
+
 
 def send_full_update_and_service_change():
     w.sendServiceChange([{'uri': "service://foo/bar", 'state': "UP"}])
@@ -74,27 +77,15 @@ def send_full_update_and_service_change():
     reactor.callLater(5, reactor.stop)
 
 
-def clear_test_data():
-    delete_triple("services", "foo", "bar")
-    delete_triple("targets", "foo", "hosts")
-
-
-def delete_triple(type_, bucket, key):
-    response = requests.delete("http://%s:8098/types/%s/buckets/%s/keys/%s" % (host, type_, bucket, key))
-    logger.info("Deleting %s/%s/%s: %s" % (type_, bucket, key, response))
-
-
 def ensure_test_data_is_present():
     tc = unittest.TestCase('__init__')
     logger.info("Checking full target API..")
-    foo_status = requests.get("http://%s:8080/api/v1/targets/foo/full" % host)
-    tc.assertEqual(foo_status.status_code, 200)
-    logger.info("Checking target keys..")
-    foo_hosts = requests.get("http://%s:8098/types/targets/buckets/foo/keys/hosts" % host)
-    tc.assertEqual(foo_hosts.text, "machine\nhost2")
-    logger.info("Checking service keys")
-    bar_service_state = requests.get("http://%s:8098/types/services/buckets/foo/keys/bar" % host)
-    tc.assertEqual(bar_service_state.text, "UP")
+    target_status = requests.get("http://%s:8080/api/v1/targets/%s/full" % (host, test_id))
+    tc.assertEqual(target_status.status_code, 200)
+    logger.info("Status ok, checking contents..")
+    actual_stored_data = json.loads(target_status.text)
+    expected_stored_data = [{u'services': [{u'state': u'down', u'name': u'frontend'}, {u'state': u'down', u'name': u'iptables'}, {u'state': u'up', u'name': u'middleservice1'}, {u'state': u'up', u'name': u'middleservice2'}, {u'state': u'up', u'name': u'backservice'}, {u'state': u'up', u'name': u'docker'}], u'host': u'machine', u'artefacts': [{u'version': u'0.9.1-42.el9.x86_64', u'name': u'ConsoleKit-libs'}, {u'version': u'1.3.10-33.el9.x86_64', u'name': u'zsh'}]}, {u'services': [{u'state': u'up', u'name': u'frontend'}, {u'state': u'down', u'name': u'iptables'}, {u'state': u'up', u'name': u'middleservice1'}, {u'state': u'up', u'name': u'middleservice2'}, {u'state': u'up', u'name': u'backservice'}, {u'state': u'up', u'name': u'docker'}], u'host': u'host2', u'artefacts': [{u'version': u'0.9.1-42.el9.x86_64', u'name': u'ConsoleKit-libs'}, {u'version': u'1.3.10-33.el9.x86_64', u'name': u'zsh'}]}]
+    tc.assertEqual(expected_stored_data, actual_stored_data)
     reactor.exit_code = 0
 
 
@@ -105,8 +96,6 @@ def timeout(nr_seconds):
         reactor.exit_code = 1
         reactor.stop()
 
-
-clear_test_data()
 
 w.addOnSessionOpenHandler(connected)
 send_full_update_and_service_change()
