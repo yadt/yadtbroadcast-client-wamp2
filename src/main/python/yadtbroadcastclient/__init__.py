@@ -81,6 +81,7 @@ class WampBroadcaster(object):
             self.client.subscribe(self.onEvent, self.target)
         for handler in self.on_session_open_handlers:
             handler()
+        self.on_session_open_handlers = []  # run handlers only once
 
         if self.queue:
             number_of_events_to_flush = len(self.queue)
@@ -126,8 +127,8 @@ class WampBroadcaster(object):
     def _publish(self, target, event):
         if not self._check_connection():
             self.logger.debug('Queueing event %s on %s since not connected' % (
-                             event,
-                             target))
+                event,
+                target))
             self.queue.append((target, event))
             return
         self.client.publish(target, event)
