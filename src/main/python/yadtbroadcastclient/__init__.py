@@ -126,8 +126,8 @@ class WampBroadcaster(object):
     def _publish(self, target, event):
         if not self._check_connection():
             self.logger.debug('Queueing event %s on %s since not connected' % (
-                             event,
-                             target))
+                event,
+                target))
             self.queue.append((target, event))
             return
         self.client.publish(target, event)
