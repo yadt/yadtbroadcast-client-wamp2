@@ -168,3 +168,12 @@ class WampBroadcaster(object):
                         target=target,
                         cmd=cmd,
                         args=args)
+
+    def send_host_change(self, cmd, uri, message=None, tracking_id=None):
+        self._sendEvent(id='status-update',
+                        data=None,
+                        tracking_id=tracking_id,
+                        target=self.target,
+                        cmd=cmd,
+                        uri=uri,
+                        message=message)
