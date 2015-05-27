@@ -2,12 +2,18 @@ from __future__ import absolute_import
 
 import logging
 
-from twisted.internet import reactor
+from twisted.internet import reactor, task
+import twisted.internet.defer as defer
 
 from autobahn.twisted import wamp, websocket
 from autobahn.wamp.serializer import JsonSerializer
 from twisted.internet.endpoints import clientFromString
 from autobahn.wamp import types
+
+from yadtbroadcastclient.rest_simple import rest_call
+
+
+logger = logging.getLogger('wampbroadcastclient')
 
 
 class WampBroadcaster(object):
@@ -177,3 +183,25 @@ class WampBroadcaster(object):
                         cmd=cmd,
                         uri=uri,
                         message=message)
+
+    def get_deferred_ignore_status_for_host(self, hostname):
+        return rest_call("http://%s:%s/api/v1/hosts/%s/status-ignored" % (self.host, self.port, hostname))
+
+    def wait_for_ignore_host(self, deferred, hostname, retry_count=3, delay=1):
+        def wait_for_response(result_of_previous_callback, tries_left):
+            d = self.get_deferred_ignore_status_for_host(hostname)
+            d.addCallback(check_status)
+            d.addErrback(check_error, tries_left)
+
+        def check_error(failure, tries_left):
+            if tries_left > 0:
+                logger.debug("retrying to fetch ignored status on %s, %i tries left" % (hostname, tries_left))
+                return task.deferLater(reactor, delay, wait_for_response, failure, tries_left - 1)
+            logger.warn(failure)
+            raise Exception("could not ignore %s" % hostname)
+
+        def check_status(result):
+            return defer.succeed(result)
+
+        deferred.addCallback(wait_for_response, retry_count)
+        return deferred
