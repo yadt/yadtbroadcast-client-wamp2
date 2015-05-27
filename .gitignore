@@ -44,3 +44,5 @@ dist-rpms
 
 # pid files
 *.pid
+
+tags
