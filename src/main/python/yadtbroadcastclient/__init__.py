@@ -187,21 +187,27 @@ class WampBroadcaster(object):
     def get_deferred_ignore_status_for_host(self, hostname):
         return rest_call("http://%s:%s/api/v1/hosts/%s/status-ignored" % (self.host, self.port, hostname))
 
-    def wait_for_ignore_host(self, deferred, hostname, retry_count=3, delay=1):
-        def wait_for_response(result_of_previous_callback, tries_left):
+    def wait_for_ignore_host(self, deferred, hostname, target_state, retry_count=3, delay=1):
+        def wait_for_response(_, tries_left):
             d = self.get_deferred_ignore_status_for_host(hostname)
-            d.addCallback(check_status)
+            d.addCallback(check_status, tries_left)
             d.addErrback(check_error, tries_left)
 
         def check_error(failure, tries_left):
+            if target_state == "unignored":
+                return defer.succeed(None)
+            wait_again(tries_left - 1)
+
+        def check_status(result, tries_left):
+            if target_state == "ignored":
+                return defer.succeed(None)
+            wait_again(tries_left - 1)
+
+        def wait_again(tries_left):
             if tries_left > 0:
                 logger.debug("retrying to fetch ignored status on %s, %i tries left" % (hostname, tries_left))
-                return task.deferLater(reactor, delay, wait_for_response, failure, tries_left - 1)
-            logger.warn(failure)
-            raise Exception("could not ignore %s" % hostname)
-
-        def check_status(result):
-            return defer.succeed(result)
+                return task.deferLater(reactor, delay, wait_for_response, None, tries_left)
+            raise Exception("could not %s %s" % (target_state, hostname))
 
         deferred.addCallback(wait_for_response, retry_count)
         return deferred
