@@ -31,7 +31,7 @@ def set_properties(project):
     project.build_depends_on('mock')
     project.build_depends_on('requests')
 
-    project.depends_on('Twisted')
+    project.depends_on('Twisted', '==13.2.0')
     project.depends_on('autobahn')
 
     project.set_property("verbose", True)
